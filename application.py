@@ -171,7 +171,6 @@ bool_values = {
 @db_session
 def api_sensor_data(sensor_name):
     if request.method == 'POST':
-        print("in api_sensor_data")
         # if POST add data for sensor
         timestamp = request.form.get('timestamp')
         if timestamp:
@@ -215,3 +214,9 @@ def api_sensor_data_by_id(sensor_name, sensordata_id):
     sdata = sensor.data.filter(id=sensordata_id)
     rsensordata = {'count': len(sdata), 'data': [SensorDataView.render(s) for s in sdata]}
     return jsonify(rsensordata)
+
+
+if __name__ == '__main__':
+    app.run(host=app.config['WWWHOST'],
+            port=app.config['WWWPORT'])
+    

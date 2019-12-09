@@ -9,3 +9,5 @@ class Config(object):
     DATABASE = os.environ.get('DATABASE') or 'automation'
     DBUSER = os.environ.get('DBUSER') or 'rjn'
     DBPWD = os.environ.get('DBPWD') or 'zaxxon'
+    WWWHOST = os.environ.get('WWWHOST') or '0.0.0.0'
+    WWWPORT = os.environ.get('WWWPORT') or '5000'
