@@ -3,7 +3,7 @@ import unittest
 import pprint
 from datetime import datetime
 
-host = 'http://192.168.0.134:5000'
+host = 'http://192.168.0.134'
 
 class TestAPI(unittest.TestCase):
 
