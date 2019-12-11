@@ -169,6 +169,10 @@ bool_values = {
 
 @app.route('/sensors/<sensor_name>/data', methods=['GET', 'POST'])
 @db_session
+# url options for GET
+# targettime=<datetime: targettime> get data <= <targettime>, default is now
+# datapts=<int: datapts> get <datapts> sensor reading back from target time, default is 1
+# default is to get latest sensor reading for sensor
 def api_sensor_data(sensor_name):
     if request.method == 'POST':
         # if POST add data for sensor
@@ -195,6 +199,7 @@ def api_sensor_data(sensor_name):
         return "", 201
     else:
         # if GET get data for sensor
+
         try:
             sensor = Sensor[sensor_name]
         except ObjectNotFound:
