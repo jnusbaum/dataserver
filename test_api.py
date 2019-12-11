@@ -2,6 +2,7 @@ import requests
 import unittest
 import pprint
 from datetime import datetime
+from time import sleep
 
 host = 'http://192.168.0.134'
 
@@ -45,6 +46,40 @@ class TestAPI(unittest.TestCase):
         data = {'value-real': '138.2', 'timestamp': tstr }
         r = requests.post(f'{host}/sensors/{sensor_name}/data', data=data)
         self.assertEqual(requests.codes.created, r.status_code, "bad response = %d" % r.status_code)
+        sleep(10)
+        tdt = datetime.today()
+        savstr = tstr = tdt.strftime("%Y-%m-%d-%H-%M-%S")
+        data = {'value-real': '136', 'timestamp': tstr}
+        r = requests.post(f'{host}/sensors/{sensor_name}/data', data=data)
+        self.assertEqual(requests.codes.created, r.status_code, "bad response = %d" % r.status_code)
+        sleep(10)
+        tdt = datetime.today()
+        tstr = tdt.strftime("%Y-%m-%d-%H-%M-%S")
+        data = {'value-real': '143.25', 'timestamp': tstr}
+        r = requests.post(f'{host}/sensors/{sensor_name}/data', data=data)
+        self.assertEqual(requests.codes.created, r.status_code, "bad response = %d" % r.status_code)
+        tcount += 1
+
+        print(f'test {tcount} - get data')
+        r = requests.get(f'{host}/sensors/{sensor_name}/data')
+        self.assertEqual(requests.codes.ok, r.status_code, "bad response = %d" % r.status_code)
+        data = r.json()
+        pprint.pprint(data)
+        tcount += 1
+
+        print(f'test {tcount} - get data')
+        targettime = savstr
+        r = requests.get(f'{host}/sensors/{sensor_name}/data?targettime={targettime}')
+        self.assertEqual(requests.codes.ok, r.status_code, "bad response = %d" % r.status_code)
+        data = r.json()
+        pprint.pprint(data)
+        tcount += 1
+
+        print(f'test {tcount} - get data')
+        r = requests.get(f'{host}/sensors/{sensor_name}/data?targettime={targettime}&datapts=2')
+        self.assertEqual(requests.codes.ok, r.status_code, "bad response = %d" % r.status_code)
+        data = r.json()
+        pprint.pprint(data)
         tcount += 1
 
         print(f'test {tcount} - change sensor')

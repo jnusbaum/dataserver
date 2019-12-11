@@ -199,12 +199,14 @@ def api_sensor_data(sensor_name):
         return "", 201
     else:
         # if GET get data for sensor
-
+        targettime = request.args.get('targettime', default=datetime.today(), type=str_to_datetime)
+        datapts = request.args.get('datapts', default=1, type=int)
         try:
             sensor = Sensor[sensor_name]
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
-        rsensordata = {'count': len(sensor.data), 'data': [SensorDataView.render(s) for s in sensor.data]}
+        sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
+        rsensordata = {'count': len(sdata), 'data': [SensorDataView.render(s) for s in sdata]}
         return jsonify(rsensordata)
 
 
