@@ -30,7 +30,8 @@ logging.basicConfig(filename=logfile, level=app.config['LOGLEVEL'],
 db.bind(provider='postgres', host=app.config['DBHOST'],
         database=app.config['DATABASE'],
         user=app.config['DBUSER'],
-        password=app.config['DBPWD'])
+        password=app.config['DBPWD'],
+        connect_timeout=300)
 
 db.generate_mapping()
 
