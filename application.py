@@ -110,7 +110,7 @@ def api_sensors():
         return "", 201
     else:
         # if GET return list of sensors
-        sensors = Sensor.select()
+        sensors = Sensor.select().sort_by(Sensor.name)
         rsensors = {'count': len(sensors), 'data': [SensorView.render(s) for s in sensors]}
         return jsonify(rsensors)
 
