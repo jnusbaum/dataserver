@@ -94,13 +94,13 @@ def handle_exception(error):
     return error_response(error)
 
 
-@app.route('/', methods=['GET'])
+@app.route('/dataserver/', methods=['GET'])
 def api_index():
     # return doc page
     return "Welcome to the sensor API"
 
 
-@app.route('/sensors', methods=['GET', 'POST'])
+@app.route('/dataserver/sensors', methods=['GET', 'POST'])
 @db_session
 def api_sensors():
     if request.method == 'POST':
@@ -115,7 +115,7 @@ def api_sensors():
         return jsonify(rsensors)
 
 
-@app.route('/sensors/<sensor_name>', methods=['GET', 'PATCH', 'DELETE'])
+@app.route('/dataserver/sensors/<sensor_name>', methods=['GET', 'PATCH', 'DELETE'])
 @db_session
 def api_sensor(sensor_name):
     if request.method == 'PATCH':
@@ -168,7 +168,7 @@ bool_values = {
 }
 
 
-@app.route('/sensors/<sensor_name>/data', methods=['GET', 'POST'])
+@app.route('/dataserver/sensors/<sensor_name>/data', methods=['GET', 'POST'])
 @db_session
 # url options for GET
 # targettime=<datetime: targettime> get data <= <targettime>, default is now
@@ -211,7 +211,7 @@ def api_sensor_data(sensor_name):
         return jsonify(rsensordata)
 
 
-@app.route('/sensors/<sensor_name>/data/<int:sensordata_id>', methods=['GET'])
+@app.route('/dataserver/sensors/<sensor_name>/data/<int:sensordata_id>', methods=['GET'])
 @db_session
 def api_sensor_data_by_id(sensor_name, sensordata_id):
     # if GET get data for sensor
