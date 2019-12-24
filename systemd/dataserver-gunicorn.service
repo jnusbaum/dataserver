@@ -1,0 +1,23 @@
+[Unit]
+Description=dataserver gunicorn daemon
+Requires=dataserver-gunicorn.socket postgresql.service
+After=network.target multi-user.target postgresql.service
+
+[Service]
+User=rjn
+Group=www-data
+RuntimeDirectory=dataserver-gunicorn
+RuntimeDirectoryMode=0775
+WorkingDirectory=/home/rjn/Projects/dataserver
+ExecStart=/home/rjn/Projects/dataserver/venv/bin/gunicorn \
+          --access-logfile /home/rjn/Projects/dataserver/log/gunicorn.access.log \
+          --error-logfile /home/rjn/Projects/dataserver/log/gunicorn.error.log \
+          --pid /run/dataserver-gunicorn/pid   \
+          --bind unix:/run/dataserver-gunicorn/socket application:app
+PIDFile=/run/dataserver-gunicorn/pid
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
