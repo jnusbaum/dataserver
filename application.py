@@ -90,7 +90,7 @@ def error_response(error, headers=None):
 
 @app.errorhandler(VIServiceException)
 def handle_exception(error):
-    db.session.rollback()
+    rollback()
     return error_response(error)
 
 
