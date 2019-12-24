@@ -24,16 +24,6 @@ server {
 
 	server_name _;
 
-	location /automation/static/ {
-		 root /home/rjn/Projects;
-	}
-
-	location /automation/ {
-		 proxy_read_timeout 300s;
-		proxy_set_header Host $host;
-		proxy_pass http://unix:/run/dashboard-gunicorn/socket;
-	}
-
 	location /dataserver/ {
 		proxy_set_header Host $host;
 		proxy_pass http://unix:/run/dataserver-gunicorn/socket;
