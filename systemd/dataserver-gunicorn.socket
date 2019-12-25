@@ -1,0 +1,9 @@
+[Unit]
+Description=dataserver gunicorn socket
+
+[Socket]
+ListenStream=/run/dataserver-gunicorn/socket
+User=www-data
+
+[Install]
+WantedBy=sockets.target

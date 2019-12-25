@@ -3,10 +3,12 @@ import logging
 from flask import Flask
 from config import Config
 from flask import jsonify, request
+from flask_cors import CORS, cross_origin
 from views import *
 
 app = Flask(__name__)
 app.config.from_object(Config)
+CORS(app)
 
 # set up logger
 # make file unique
@@ -169,6 +171,7 @@ bool_values = {
 
 
 @app.route('/dataserver/sensors/<sensor_name>/data', methods=['GET', 'POST'])
+@cross_origin()
 @db_session
 # url options for GET
 # targettime=<datetime: targettime> get data <= <targettime>, default is now
