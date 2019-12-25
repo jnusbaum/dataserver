@@ -3,10 +3,12 @@ import logging
 from flask import Flask
 from config import Config
 from flask import jsonify, request
+from flask_cors import CORS
 from views import *
 
 app = Flask(__name__)
 app.config.from_object(Config)
+CORS(app)
 
 # set up logger
 # make file unique
