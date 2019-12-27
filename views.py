@@ -20,10 +20,10 @@ class SensorView:
 
 class SensorDataView:
     @classmethod
-    def render(cls, sensordata: SensorData):
+    def render(cls, sensordata: SensorData, altvalue: Decimal = None):
         dself = {'attributes': { 'timestamp': sensordata.timestamp.strftime("%Y-%m-%d-%H-%M-%S"),
                                  # this is a decimal so we convert it to a string here
-                                 'value_real': str(sensordata.value_real),
+                                 'value_real': str(altvalue if altvalue else sensordata.value_real),
                                  'value_bool': sensordata.value_bool,
                                 },
                  'id': str(sensordata.id),

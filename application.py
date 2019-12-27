@@ -1,6 +1,5 @@
 import os
 import logging
-from statistics import mean
 from flask import Flask
 from config import Config
 from flask import jsonify, request
@@ -225,10 +224,28 @@ def api_sensor_data(sensor_name):
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
         sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
-        vals = [x.value_real for x in sdata]
-        bad = clean_data(vals)
-
-        rsensordata = {'count': len(sdata), 'data': [SensorDataView.render(s) for s in sdata]}
+        data = []
+        bad = 0
+        val = sdata[0]['attributes']['value_real']
+        if val < 0:
+            bad += 1
+            val = Decimal(0)
+            v = SensorDataView.render(sdata[0], val)
+        else:
+            v = SensorDataView.render(sdata[0])
+        data.append(v)
+        for i in range(1, len(sdata)):
+            # null all clearly bad values
+            prev = val
+            val = sdata[i]['attributes']['value_real']
+            if val < 0 or val < (.3 * prev):
+                bad += 1
+                val = Decimal(0)
+                v = SensorDataView.render(sdata[i], val)
+            else:
+                v = SensorDataView.render(sdata[i])
+            data.append(v)
+        rsensordata = {'count': len(sdata), 'data': data}
         return jsonify(rsensordata)
 
 
@@ -248,4 +265,3 @@ def api_sensor_data_by_id(sensor_name, sensordata_id):
 if __name__ == '__main__':
     app.run(host=app.config['WWWHOST'],
             port=app.config['WWWPORT'])
-    
