@@ -43,59 +43,13 @@ def clean_data(sdata):
     # cleans list in place, returns number of bad points found
     bad = 0
     # null all clearly bad values
-    for i in range(len(sdata)):
-        if sdata[i] < 0:
+    if sdata[0] < 0:
+        sdata[0] = Decimal(0)
+    for i in range(1, len(sdata)):
+        prev = sdata[i-1]
+        if sdata[i] < 0 or sdata[i] < (.3 * prev):
             bad += 1
-            sdata[i] = 0
-
-    outdata = []
-    # 3 point window, x, y, z
-    # avgxz = average of x and z
-    # diffy = abs(y - avgxz)
-    # if diffy > 35% replace y with avgxz
-    # also look for less than 0 and
-    xi = sdata[0]
-    yi = sdata[1]
-    zi = sdata[2]
-    outdata.append(xi)
-    for i in range(3, len(sdata)):
-        inval = 0
-        avgxz = mean((xi, zi))
-        if yi > 0:
-            diffy = abs(yi - avgxz)/avgxz
-            if diffy > .35:
-                inval = avgxz  # set current item to avg
-                bad += 1
-            else:
-                inval = yi
-        else:
-            inval = avgxz
-            bad += 1
-        xi = inval
-        yi = zi
-        zi = sdata[i]
-
-        outdata.append(inval)
-
-    inval = 0
-    avgxz = mean((xi, zi))
-    if yi > 0:
-        diffy = abs(yi - avgxz)/avgxz
-        if diffy > .35:
-            inval = avgxz  # set current item to avg
-            bad += 1
-        else:
-            inval = yi
-    else:
-        inval = avgxz
-        bad += 1
-    yi = zi
-
-    outdata.append(inval)
-    outdata.append(yi)
-
-    for i in range(len(outdata)):
-        sdata[i] = outdata[i]
+            sdata[i] = prev
     return bad
 
 
