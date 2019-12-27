@@ -11,23 +11,31 @@ class Sensor(db.Entity):
     type = Required(str, max_len=8)
     address = Optional(str, max_len=128)
     description = Optional(str, max_len=512)
+    zone = Optional('Zone', index=True)
     data = Set('SensorData')
 
     def before_insert(self):
-        if self.type not in ( 'TEMP', 'POS', 'ONOFF' ):
+        if self.type not in ('TEMP', 'POS', 'ONOFF'):
             raise TypeError("value for type must be one of TEMP, POS, ONOFF")
 
     def before_update(self):
-        if self.type not in ( 'TEMP', 'POS', 'ONOFF' ):
+        if self.type not in ('TEMP', 'POS', 'ONOFF'):
             raise TypeError("value for type must be one of TEMP, POS, ONOFF")
+
+
+class Zone(db.Entity):
+    name = PrimaryKey(str)
+    description = Optional(str, max_len=512)
+    sensors = Set(Sensor)
 
 
 class SensorData(db.Entity):
     id = PrimaryKey(int, auto=True)
-    sensor = Required('Sensor')
+    sensor = Required(Sensor)
     timestamp = Required(datetime)
     value_real = Optional(Decimal, precision=10, scale=2)
     value_bool = Optional(bool)
+    composite_index(sensor, timestamp)
 
     def before_insert(self):
         if not (self.value_real or self.value_bool):

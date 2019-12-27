@@ -1,5 +1,6 @@
 import os
 
+
 class Config(object):
     SECRET_KEY = os.environ.get('FLASKKEY') or 'you-will-never-guess'
     LOGLEVEL = os.environ.get('LOGLEVEL') or 'INFO'

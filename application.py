@@ -38,20 +38,6 @@ db.bind(provider='postgres', host=app.config['DBHOST'],
 db.generate_mapping()
 
 
-def clean_data(sdata):
-    # cleans list in place, returns number of bad points found
-    bad = 0
-    # null all clearly bad values
-    if sdata[0] < 0:
-        sdata[0] = Decimal(0)
-    for i in range(1, len(sdata)):
-        prev = sdata[i-1]
-        if sdata[i] < 0 or sdata[i] < (.3 * prev):
-            bad += 1
-            sdata[i] = prev
-    return bad
-
-
 def str_to_datetime(ans):
     if ans:
         d = datetime.strptime(ans, "%Y-%m-%d-%H-%M-%S")
@@ -116,13 +102,65 @@ def api_index():
     return "Welcome to the sensor API"
 
 
+@app.route('/dataserver/zones', methods=['GET', 'POST'])
+@db_session
+def api_zones():
+    if request.method == 'POST':
+        # if POST add new zone
+        Zone(name=request.form['name'], description=request.form['description'])
+        return "", 201
+    else:
+        # if GET return list of zones
+        zones = Zone.select().sort_by(Zone.name)
+        rzones = {'count': len(zones), 'data': [ZoneView.render(z) for z in zones]}
+        return jsonify(rzones)
+
+
+@app.route('/dataserver/zones/<zone_name>', methods=['GET', 'PATCH', 'DELETE'])
+@db_session
+def api_zone(zone_name):
+    if request.method == 'PATCH':
+        # if PATCH add data for zone
+        try:
+            zone = Zone[zone_name]
+        except ObjectNotFound:
+            raise VI404Exception("No Zone with the specified id was found.")
+        # can't change pk (name)
+        try:
+            zone.description = request.form['description']
+        except KeyError:
+            pass
+        return "", 204
+    elif request.method == 'DELETE':
+        # if DELETE delete sensor
+        try:
+            zone = Zone[zone_name]
+        except ObjectNotFound:
+            raise VI404Exception("No Zone with the specified id was found.")
+        zone.delete()
+        return "", 204
+    else:
+        # if GET get zone meta data
+        try:
+            zone = Zone[zone_name]
+        except ObjectNotFound:
+            raise VI404Exception("No Zone with the specified id was found.")
+        rzone = {'count': 1, 'data': [ZoneView.render(zone)]}
+        return jsonify(rzone)
+
+
 @app.route('/dataserver/sensors', methods=['GET', 'POST'])
 @db_session
 def api_sensors():
     if request.method == 'POST':
         # if POST add new sensor
+        try:
+            zone = Zone[request.form['zone']]
+        except ObjectNotFound:
+            raise VI404Exception("No Zone with the specified id was found.")
         Sensor(name=request.form['name'], type=request.form['type'],
-               address=request.form['address'], description=request.form['description'])
+               address=request.form['address'], description=request.form['description'],
+               zone=zone)
         return "", 201
     else:
         # if GET return list of sensors
@@ -153,6 +191,14 @@ def api_sensor(sensor_name):
             sensor.description = request.form['description']
         except KeyError:
             pass
+        try:
+            zname = request.form['zone']
+            try:
+                sensor.zone = Zone[zname]
+            except ObjectNotFound:
+                raise VI404Exception("No Zone with the specified id was found.")
+        except KeyError:
+            pass
         return "", 204
     elif request.method == 'DELETE':
         # if DELETE delete sensor
@@ -170,6 +216,63 @@ def api_sensor(sensor_name):
             raise VI404Exception("No Sensor with the specified id was found.")
         rsensor = {'count': 1, 'data': [SensorView.render(sensor)]}
         return jsonify(rsensor)
+
+
+@app.route('/dataserver/sensors/zone/<zone_name>', methods=['GET'])
+@db_session
+def api_sensors_for_zone(zone_name):
+    # if GET get zone meta data
+    try:
+        zone = Zone[zone_name]
+    except ObjectNotFound:
+        raise VI404Exception("No Zone with the specified id was found.")
+    # sensors for zone
+    rsensors = {'count': len(zone.sensors), 'data': [SensorView.render(s) for s in zone.sensors]}
+    return jsonify(rsensors)
+
+
+@app.route('/dataserver/zones/<zone_name>/data', methods=['GET'])
+@db_session
+# url options for GET
+# targettime=<datetime: targettime> get data <= <targettime>, default is now
+# datapts=<int: datapts> get <datapts> sensor reading back from target time, default is 1
+# default is to get latest sensor reading for sensor
+def api_zone_data(zone_name):
+    # if GET get zone meta data
+    try:
+        zone = Zone[zone_name]
+    except ObjectNotFound:
+        raise VI404Exception("No Zone with the specified id was found.")
+    targettime = request.args.get('targettime', default=datetime.today(), type=str_to_datetime)
+    datapts = request.args.get('datapts', default=1, type=int)
+    dseries = {}
+    for sensor in zone.sensors:
+        sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
+        data = []
+        bad = 0
+        if len(sdata):
+            val = sdata[0].value_real
+            if val < 0:
+                bad += 1
+                val = Decimal(0)
+                v = SensorDataView.render(sdata[0], val)
+            else:
+                v = SensorDataView.render(sdata[0])
+            data.append(v)
+            for i in range(1, len(sdata)):
+                # null all clearly bad values
+                prev = val
+                val = sdata[i].value_real
+                if val < 0 or val < (Decimal(0.3) * prev):
+                    bad += 1
+                    val = Decimal(0)
+                    v = SensorDataView.render(sdata[i], val)
+                else:
+                    v = SensorDataView.render(sdata[i])
+                data.append(v)
+            dseries[sensor.name] = {'count': len(data), 'data': data}
+    rsensordata = {'count': 1, 'data': dseries}
+    return jsonify(rsensordata)
 
 
 bool_values = {
@@ -223,28 +326,29 @@ def api_sensor_data(sensor_name):
             sensor = Sensor[sensor_name]
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
-        sdata = list(sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts))
+        sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
         data = []
         bad = 0
-        val = sdata[0]['attributes']['value_real']
-        if val < 0:
-            bad += 1
-            val = Decimal(0)
-            v = SensorDataView.render(sdata[0], val)
-        else:
-            v = SensorDataView.render(sdata[0])
-        data.append(v)
-        for i in range(1, len(sdata)):
-            # null all clearly bad values
-            prev = val
-            val = sdata[i]['attributes']['value_real']
-            if val < 0 or val < (.3 * prev):
+        if len(sdata):
+            val = sdata[0].value_real
+            if val < 0:
                 bad += 1
                 val = Decimal(0)
-                v = SensorDataView.render(sdata[i], val)
+                v = SensorDataView.render(sdata[0], val)
             else:
-                v = SensorDataView.render(sdata[i])
+                v = SensorDataView.render(sdata[0])
             data.append(v)
+            for i in range(1, len(sdata)):
+                # null all clearly bad values
+                prev = val
+                val = sdata[i].value_real
+                if val < 0 or val < (Decimal(0.3) * prev):
+                    bad += 1
+                    val = Decimal(0)
+                    v = SensorDataView.render(sdata[i], val)
+                else:
+                    v = SensorDataView.render(sdata[i])
+                data.append(v)
         rsensordata = {'count': len(sdata), 'data': data}
         return jsonify(rsensordata)
 
