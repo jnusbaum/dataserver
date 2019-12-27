@@ -1,5 +1,6 @@
 import os
 import logging
+from statistics import mean
 from flask import Flask
 from config import Config
 from flask import jsonify, request
@@ -36,6 +37,20 @@ db.bind(provider='postgres', host=app.config['DBHOST'],
         connect_timeout=300)
 
 db.generate_mapping()
+
+
+def clean_data(sdata):
+    # cleans list in place, returns number of bad points found
+    bad = 0
+    # null all clearly bad values
+    if sdata[0] < 0:
+        sdata[0] = Decimal(0)
+    for i in range(1, len(sdata)):
+        prev = sdata[i-1]
+        if sdata[i] < 0 or sdata[i] < (.3 * prev):
+            bad += 1
+            sdata[i] = prev
+    return bad
 
 
 def str_to_datetime(ans):
@@ -210,6 +225,9 @@ def api_sensor_data(sensor_name):
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
         sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
+        vals = [x.value_real for x in sdata]
+        bad = clean_data(vals)
+
         rsensordata = {'count': len(sdata), 'data': [SensorDataView.render(s) for s in sdata]}
         return jsonify(rsensordata)
 
