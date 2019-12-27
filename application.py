@@ -223,7 +223,7 @@ def api_sensor_data(sensor_name):
             sensor = Sensor[sensor_name]
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
-        sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
+        sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)[:]
         data = []
         bad = 0
         val = sdata[0]['attributes']['value_real']
