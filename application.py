@@ -1,5 +1,6 @@
 import os
 import logging
+from statistics import mean
 from flask import Flask
 from config import Config
 from flask import jsonify, request
@@ -36,6 +37,66 @@ db.bind(provider='postgres', host=app.config['DBHOST'],
         connect_timeout=300)
 
 db.generate_mapping()
+
+
+def clean_data(sdata):
+    # cleans list in place, returns number of bad points found
+    bad = 0
+    # null all clearly bad values
+    for i in range(len(sdata)):
+        if sdata[i] < 0:
+            bad += 1
+            sdata[i] = 0
+
+    outdata = []
+    # 3 point window, x, y, z
+    # avgxz = average of x and z
+    # diffy = abs(y - avgxz)
+    # if diffy > 35% replace y with avgxz
+    # also look for less than 0 and
+    xi = sdata[0]
+    yi = sdata[1]
+    zi = sdata[2]
+    outdata.append(xi)
+    for i in range(3, len(sdata)):
+        inval = 0
+        avgxz = mean((xi, zi))
+        if yi > 0:
+            diffy = abs(yi - avgxz)/avgxz
+            if diffy > .35:
+                inval = avgxz  # set current item to avg
+                bad += 1
+            else:
+                inval = yi
+        else:
+            inval = avgxz
+            bad += 1
+        xi = inval
+        yi = zi
+        zi = sdata[i]
+
+        outdata.append(inval)
+
+    inval = 0
+    avgxz = mean((xi, zi))
+    if yi > 0:
+        diffy = abs(yi - avgxz)/avgxz
+        if diffy > .35:
+            inval = avgxz  # set current item to avg
+            bad += 1
+        else:
+            inval = yi
+    else:
+        inval = avgxz
+        bad += 1
+    yi = zi
+
+    outdata.append(inval)
+    outdata.append(yi)
+
+    for i in range(len(outdata)):
+        sdata[i] = outdata[i]
+    return bad
 
 
 def str_to_datetime(ans):
@@ -210,6 +271,9 @@ def api_sensor_data(sensor_name):
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
         sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
+        vals = [x.value_real for x in sdata]
+        bad = clean_data(vals)
+
         rsensordata = {'count': len(sdata), 'data': [SensorDataView.render(s) for s in sdata]}
         return jsonify(rsensordata)
 
