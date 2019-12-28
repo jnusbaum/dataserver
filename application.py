@@ -263,9 +263,9 @@ def api_zone_data(zone_name):
                 # null all clearly bad values
                 prev = val
                 val = sdata[i].value_real
-                if val < 0 or val < (Decimal(0.3) * prev):
+                if val < 0 or val < (Decimal(0.7) * prev):
                     bad += 1
-                    val = Decimal(0)
+                    val = prev
                     v = SensorDataView.render(sdata[i], val)
                 else:
                     v = SensorDataView.render(sdata[i])
