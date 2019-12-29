@@ -26,9 +26,9 @@ class SensorView:
                  'self': f"/sensors/{sensor.name}",
                  'relationships': {
                      'data': f"/sensors/{sensor.name}/data",
-                     'zone': f"/zones/{sensor.zone.name}"
+                     'zone': f"/zones/{sensor.zone.name}" if sensor.zone else '',
                  }
-                 }
+        }
         return dself
 
 
@@ -46,5 +46,5 @@ class SensorDataView:
                  'relationships': {
                      'sensor': f"/sensors/{sensordata.sensor.name}"
                  }
-                 }
+        }
         return dself

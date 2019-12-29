@@ -327,6 +327,7 @@ def api_sensor_data(sensor_name):
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
         sdata = sensor.data.filter(lambda s: s.timestamp <= targettime).order_by(desc(SensorData.timestamp)).limit(datapts)
+
         data = []
         bad = 0
         if len(sdata):
@@ -342,15 +343,15 @@ def api_sensor_data(sensor_name):
                 # null all clearly bad values
                 prev = val
                 val = sdata[i].value_real
-                if val < 0 or val < (Decimal(0.3) * prev):
+                if val < 0 or val < (Decimal(0.7) * prev):
                     bad += 1
-                    val = Decimal(0)
+                    val = prev
                     v = SensorDataView.render(sdata[i], val)
                 else:
                     v = SensorDataView.render(sdata[i])
                 data.append(v)
-        rsensordata = {'count': len(sdata), 'data': data}
-        return jsonify(rsensordata)
+    rsensordata = {'count': len(data), 'data': data}
+    return jsonify(rsensordata)
 
 
 @app.route('/dataserver/sensors/<sensor_name>/data/<int:sensordata_id>', methods=['GET'])
