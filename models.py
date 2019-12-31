@@ -33,8 +33,8 @@ class SensorData(db.Entity):
     id = PrimaryKey(int, auto=True)
     sensor = Required(Sensor)
     timestamp = Required(datetime)
-    value_real = Optional(Decimal, precision=10, scale=2)
-    value_bool = Optional(bool)
+    value_real = Required(Decimal, precision=10, scale=2)
+    original_value = Optional(Decimal, precision=10, scale=2)
     composite_index(sensor, timestamp)
 
     def before_insert(self):

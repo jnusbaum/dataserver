@@ -11,6 +11,7 @@ app.config.from_object(Config)
 CORS(app)
 
 MAX_TEMP_MOVE = 25
+MIN_TEMP = 30
 
 # set up logger
 # make file unique
@@ -254,9 +255,9 @@ def api_zone_data(zone_name):
         bad = 0
         if len(sdata):
             val = sdata[0].value_real
-            if val < 0:
+            if val < MIN_TEMP:
                 bad += 1
-                val = Decimal(0)
+                val = Decimal(MIN_TEMP)
                 v = SensorDataView.render(sdata[0], val)
             else:
                 v = SensorDataView.render(sdata[0])
@@ -265,7 +266,7 @@ def api_zone_data(zone_name):
                 # null all clearly bad values
                 prev = val
                 val = sdata[i].value_real
-                if val < 0 or abs(val - prev) > MAX_TEMP_MOVE:
+                if val < MIN_TEMP or abs(val - prev) > MAX_TEMP_MOVE:
                     bad += 1
                     val = prev
                     v = SensorDataView.render(sdata[i], val)
@@ -334,9 +335,9 @@ def api_sensor_data(sensor_name):
         bad = 0
         if len(sdata):
             val = sdata[0].value_real
-            if val < 0:
+            if val < MIN_TEMP:
                 bad += 1
-                val = Decimal(0)
+                val = Decimal(MIN_TEMP)
                 v = SensorDataView.render(sdata[0], val)
             else:
                 v = SensorDataView.render(sdata[0])
