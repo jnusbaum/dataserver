@@ -10,6 +10,8 @@ app = Flask(__name__)
 app.config.from_object(Config)
 CORS(app)
 
+MAX_TEMP_MOVE = 25
+
 # set up logger
 # make file unique
 # we will be running multiple processes behind gunicorn
@@ -263,7 +265,7 @@ def api_zone_data(zone_name):
                 # null all clearly bad values
                 prev = val
                 val = sdata[i].value_real
-                if val < 0 or val < (Decimal(0.7) * prev):
+                if val < 0 or abs(val - prev) > MAX_TEMP_MOVE:
                     bad += 1
                     val = prev
                     v = SensorDataView.render(sdata[i], val)
@@ -343,7 +345,7 @@ def api_sensor_data(sensor_name):
                 # null all clearly bad values
                 prev = val
                 val = sdata[i].value_real
-                if val < 0 or val < (Decimal(0.7) * prev):
+                if val < 0 or abs(val - prev) > MAX_TEMP_MOVE:
                     bad += 1
                     val = prev
                     v = SensorDataView.render(sdata[i], val)
