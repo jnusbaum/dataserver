@@ -19,8 +19,8 @@ CREATE TABLE "sensordata" (
   "id" SERIAL PRIMARY KEY,
   "sensor" TEXT NOT NULL,
   "timestamp" TIMESTAMP NOT NULL,
-  "value_real" DECIMAL(12, 2),
-  "value_bool" BOOLEAN
+  "value_real" DECIMAL(12, 2) NOT NULL,
+  "original_value" DECIMAL(12, 2),
 );
 
 CREATE INDEX "idx_sensordata__sensor_timestamp" ON "sensordata" ("sensor", "timestamp");

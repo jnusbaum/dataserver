@@ -308,18 +308,11 @@ def api_sensor_data(sensor_name):
         value_real = request.form.get('value-real')
         if value_real:
             value_real = Decimal(value_real)
-        value_bool = request.form.get('value-bool')
-        if value_bool:
-            try:
-                value_bool = bool_values[value_bool]
-            except KeyError:
-                # invalid bool value specified
-                raise VI400Exception("Invalid bool value specified.")
         try:
             sensor = Sensor[sensor_name]
         except ObjectNotFound:
             raise VI404Exception("No Sensor with the specified id was found.")
-        SensorData(sensor=sensor, timestamp=timestamp, value_real=value_real, value_bool=value_bool)
+        SensorData(sensor=sensor, timestamp=timestamp, value_real=value_real)
         return "", 201
     else:
         # if GET get data for sensor

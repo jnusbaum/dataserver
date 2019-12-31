@@ -37,10 +37,3 @@ class SensorData(db.Entity):
     original_value = Optional(Decimal, precision=10, scale=2)
     composite_index(sensor, timestamp)
 
-    def before_insert(self):
-        if not (self.value_real or self.value_bool):
-            raise TypeError("must have a real or boolean value specified")
-
-    def before_update(self):
-        if not (self.value_real or self.value_bool):
-            raise TypeError("must have a real or boolean value specified")

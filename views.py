@@ -38,7 +38,7 @@ class SensorDataView:
         dself = {'attributes': {'timestamp': sensordata.timestamp.strftime("%Y-%m-%d-%H-%M-%S"),
                                 # this is a decimal so we convert it to a string here
                                 'value_real': str(altvalue if altvalue else sensordata.value_real),
-                                'value_bool': sensordata.value_bool,
+                                'original_value': sensordata.original_value,
                                 },
                  'id': str(sensordata.id),
                  'type': 'SensorData',
