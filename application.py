@@ -1,5 +1,6 @@
 import os
 import logging
+from statistics import mean
 from flask import Flask
 from config import Config
 from flask import jsonify, request
@@ -326,11 +327,15 @@ def api_sensor_data(sensor_name):
 
         data = []
         bad = 0
-        if len(sdata):
+        if len(sdata) >= 4:
+            # initialize algorithm
+            # determine if initial value is bad
             val = sdata[0].value_real
-            if val < MIN_TEMP:
+            avgval = mean((val, sdata[1].value_real, sdata[2].value_real, sdata[3].value_real))
+            if val < MIN_TEMP or abs(val - avgval) > MAX_TEMP_MOVE:
+                # bad value
                 bad += 1
-                val = Decimal(MIN_TEMP)
+                print(f"{sensor.name}: replacing {val} with {avgval} at index 0, timestamp {sdata[0].timestamp}")
                 v = SensorDataView.render(sdata[0], val)
             else:
                 v = SensorDataView.render(sdata[0])
@@ -339,15 +344,17 @@ def api_sensor_data(sensor_name):
                 # null all clearly bad values
                 prev = val
                 val = sdata[i].value_real
-                if val < 0 or abs(val - prev) > MAX_TEMP_MOVE:
+                if val < MIN_TEMP or abs(val - prev) > MAX_TEMP_MOVE:
                     bad += 1
+                    print(f"{sensor.name}: replacing {val} with {prev} at index {i}, timestamp {sdata[i].timestamp}")
                     val = prev
                     v = SensorDataView.render(sdata[i], val)
                 else:
                     v = SensorDataView.render(sdata[i])
                 data.append(v)
-    rsensordata = {'count': len(data), 'data': data}
-    return jsonify(rsensordata)
+            print(f"{sensor.name}: {bad} bad data points out of {len(sdata)}")
+        rsensordata = {'count': len(data), 'data': data}
+        return jsonify(rsensordata)
 
 
 @app.route('/dataserver/sensors/<sensor_name>/data/<int:sensordata_id>', methods=['GET'])
