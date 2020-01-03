@@ -13,6 +13,9 @@ class Sensor(db.Entity):
     description = Optional(str, max_len=512)
     zone = Optional('Zone', index=True)
     data = Set('SensorData')
+    hour_bad = Optional(int)
+    day_bad = Optional(int)
+    ten_day_bad = Optional(int)
 
     def before_insert(self):
         if self.type not in ('TEMP', 'POS', 'ONOFF'):
